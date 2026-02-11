@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./agentmind-hero-minimal.png" alt="AgentMind" width="800">
+</p>
+
 # AgentMind — Self-Learning Memory System for AI Agents
 
 > **Give your AI Agent memory, let it grow, and make it understand you better over time.**

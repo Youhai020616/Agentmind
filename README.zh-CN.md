@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./agentmind-hero-minimal.png" alt="AgentMind" width="800">
+</p>
+
 # AgentMind — Agent 自学习记忆系统
 
 > **让 AI Agent 拥有记忆、学会成长、越用越懂你。**
