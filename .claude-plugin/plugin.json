@@ -8,9 +8,5 @@
   "homepage": "https://github.com/Youhai020616/Agentmind",
   "repository": "https://github.com/Youhai020616/Agentmind",
   "license": "MIT",
-  "keywords": ["learning", "memory", "agent", "instinct", "evolution", "self-learning"],
-  "commands": "./commands/",
-  "agents": "./agents/",
-  "skills": "./skills/",
-  "hooks": "./hooks/hooks.json"
+  "keywords": ["learning", "memory", "agent", "instinct", "evolution", "self-learning"]
 }
