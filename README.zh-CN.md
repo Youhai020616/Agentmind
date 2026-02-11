@@ -165,24 +165,6 @@ AgentMind 只存储**行为模式**，不存储代码内容：
 
 所有数据默认存储在本地 `data/` 目录。
 
-## 设计文档
-
-完整设计文档位于 `docs/` 目录：
-
-| 文档 | 内容 |
-|------|------|
-| [00-README](docs/00-README.md) | 项目概述与文档索引 |
-| [01-system-architecture](docs/01-system-architecture.md) | 六层系统架构设计 |
-| [02-observation-layer](docs/02-observation-layer.md) | 四层观察系统 |
-| [03-analysis-engine](docs/03-analysis-engine.md) | 分析引擎与因果推理 |
-| [04-confidence-system](docs/04-confidence-system.md) | 三维复合置信度系统 |
-| [05-evolution-system](docs/05-evolution-system.md) | 四级进化机制 |
-| [06-api-sdk-design](docs/06-api-sdk-design.md) | API/SDK 接口设计 |
-| [07-commercialization](docs/07-commercialization.md) | 商业化方案与定价 |
-| [08-implementation-roadmap](docs/08-implementation-roadmap.md) | 分阶段实施路线图 |
-| [09-market-analysis](docs/09-market-analysis.md) | 深度市场分析 |
-| [10-claude-code-plugin-guide](docs/10-claude-code-plugin-guide.md) | Claude Code Plugin 开发规范 |
-
 ## 路线图
 
 - [x] Phase 0: Plugin 骨架与核心文件

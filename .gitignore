@@ -7,6 +7,9 @@ scripts/lib/dist/
 # Runtime data (user-specific, never commit)
 data/
 
+# Design documents (local only)
+docs/
+
 # OS files
 .DS_Store
 Thumbs.db

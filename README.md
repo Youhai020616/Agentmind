@@ -165,24 +165,6 @@ AgentMind only stores **behavioral patterns**, never code content:
 
 All data is stored locally in the `data/` directory by default.
 
-## Design Documents
-
-Full design documentation is available in the `docs/` directory:
-
-| Document | Content |
-|----------|---------|
-| [00-README](docs/00-README.md) | Project overview and document index |
-| [01-system-architecture](docs/01-system-architecture.md) | Six-layer system architecture |
-| [02-observation-layer](docs/02-observation-layer.md) | Four-layer observation system |
-| [03-analysis-engine](docs/03-analysis-engine.md) | Analysis engine and causal reasoning |
-| [04-confidence-system](docs/04-confidence-system.md) | Three-dimensional confidence system |
-| [05-evolution-system](docs/05-evolution-system.md) | Four-level evolution mechanism |
-| [06-api-sdk-design](docs/06-api-sdk-design.md) | API/SDK interface design |
-| [07-commercialization](docs/07-commercialization.md) | Commercialization plan and pricing |
-| [08-implementation-roadmap](docs/08-implementation-roadmap.md) | Phased implementation roadmap |
-| [09-market-analysis](docs/09-market-analysis.md) | In-depth market analysis |
-| [10-claude-code-plugin-guide](docs/10-claude-code-plugin-guide.md) | Claude Code Plugin development guide |
-
 ## Roadmap
 
 - [x] Phase 0: Plugin skeleton and core files
