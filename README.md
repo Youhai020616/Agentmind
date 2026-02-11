@@ -87,60 +87,6 @@ Level 2: Strategy    — Transferable decision principles
 Level 3: Expert      — Complete domain capability set
 ```
 
-## Project Structure
-
-```
-agentmind/
-├── .claude-plugin/
-│   ├── plugin.json              # Plugin manifest
-│   └── marketplace.json         # Marketplace definition
-├── skills/                      # Auto-activated Skills
-│   ├── agentmind-context/       # Learning context injection
-│   └── agentmind-guide/         # Behavior guidance
-├── commands/                    # User commands
-│   ├── status.md
-│   ├── reflect.md
-│   ├── evolve.md
-│   ├── instincts.md
-│   └── dashboard.md
-├── agents/                      # Dedicated Agents
-│   ├── learning-analyst.md
-│   └── evolution-engine.md
-├── hooks/
-│   └── hooks.json               # Event hook registration
-├── scripts/                     # Hook scripts
-│   ├── observe-intent.sh
-│   ├── observe-execution.sh
-│   ├── observe-evaluation.sh
-│   ├── inject-context.sh
-│   ├── analyze-session.sh
-│   ├── pre-compact-save.sh
-│   └── lib/                     # Core TypeScript library
-│       ├── types.ts
-│       ├── storage.ts
-│       ├── detector.ts
-│       ├── confidence.ts
-│       ├── instinct-manager.ts
-│       ├── context-generator.ts
-│       └── run.sh
-├── data/                        # Runtime data (.gitignore)
-├── docs/                        # Design documents
-│   ├── 00-README.md
-│   ├── 01-system-architecture.md
-│   ├── 02-observation-layer.md
-│   ├── 03-analysis-engine.md
-│   ├── 04-confidence-system.md
-│   ├── 05-evolution-system.md
-│   ├── 06-api-sdk-design.md
-│   ├── 07-commercialization.md
-│   ├── 08-implementation-roadmap.md
-│   ├── 09-market-analysis.md
-│   └── 10-claude-code-plugin-guide.md
-├── package.json
-├── tsconfig.json
-└── README.md
-```
-
 ## Development
 
 ### Prerequisites

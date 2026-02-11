@@ -87,60 +87,6 @@ Level 2: 策略 (Strategy)        — 可迁移的决策原则
 Level 3: 专家系统 (Expert)      — 完整领域能力集
 ```
 
-## 项目结构
-
-```
-agentmind/
-├── .claude-plugin/
-│   ├── plugin.json              # 插件清单
-│   └── marketplace.json         # Marketplace 定义
-├── skills/                      # 自动激活的 Skills
-│   ├── agentmind-context/       # 学习上下文注入
-│   └── agentmind-guide/         # 行为指导
-├── commands/                    # 用户命令
-│   ├── status.md
-│   ├── reflect.md
-│   ├── evolve.md
-│   ├── instincts.md
-│   └── dashboard.md
-├── agents/                      # 专用 Agents
-│   ├── learning-analyst.md
-│   └── evolution-engine.md
-├── hooks/
-│   └── hooks.json               # 事件钩子注册
-├── scripts/                     # Hook 脚本
-│   ├── observe-intent.sh
-│   ├── observe-execution.sh
-│   ├── observe-evaluation.sh
-│   ├── inject-context.sh
-│   ├── analyze-session.sh
-│   ├── pre-compact-save.sh
-│   └── lib/                     # 核心 TypeScript 库
-│       ├── types.ts
-│       ├── storage.ts
-│       ├── detector.ts
-│       ├── confidence.ts
-│       ├── instinct-manager.ts
-│       ├── context-generator.ts
-│       └── run.sh
-├── data/                        # 运行时数据 (.gitignore)
-├── docs/                        # 设计文档
-│   ├── 00-README.md
-│   ├── 01-system-architecture.md
-│   ├── 02-observation-layer.md
-│   ├── 03-analysis-engine.md
-│   ├── 04-confidence-system.md
-│   ├── 05-evolution-system.md
-│   ├── 06-api-sdk-design.md
-│   ├── 07-commercialization.md
-│   ├── 08-implementation-roadmap.md
-│   ├── 09-market-analysis.md
-│   └── 10-claude-code-plugin-guide.md
-├── package.json
-├── tsconfig.json
-└── README.md                    # 本文件
-```
-
 ## 开发
 
 ### 前置要求
