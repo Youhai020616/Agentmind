@@ -168,7 +168,7 @@ All data is stored locally in the `data/` directory by default.
 ## Roadmap
 
 - [x] Phase 0: Plugin skeleton and core files
-- [ ] Phase 0.5: Script debugging and local testing
+- [x] Phase 0.5: Script debugging and local testing
 - [ ] Phase 1: Analysis engine enhancement + Confidence system
 - [ ] Phase 2: Evolution system + Dashboard
 - [ ] Phase 3: Marketplace release

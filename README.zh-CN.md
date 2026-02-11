@@ -168,7 +168,7 @@ AgentMind 只存储**行为模式**，不存储代码内容：
 ## 路线图
 
 - [x] Phase 0: Plugin 骨架与核心文件
-- [ ] Phase 0.5: 脚本调试与本地测试
+- [x] Phase 0.5: 脚本调试与本地测试
 - [ ] Phase 1: 分析引擎增强 + 置信度系统
 - [ ] Phase 2: 进化系统 + Dashboard
 - [ ] Phase 3: Marketplace 发布
