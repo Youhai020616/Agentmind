@@ -1,0 +1,17 @@
+{
+  "name": "agentmind",
+  "version": "0.1.0",
+  "description": "Agent 自学习记忆系统 — 让 AI Agent 越用越懂你",
+  "author": {
+    "name": "AgentMind Team",
+    "url": "https://github.com/agentmind"
+  },
+  "homepage": "https://agentmind.dev",
+  "repository": "https://github.com/agentmind/agentmind-plugin",
+  "license": "MIT",
+  "keywords": ["learning", "memory", "agent", "instinct", "evolution"],
+  "commands": "./commands/",
+  "agents": "./agents/",
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

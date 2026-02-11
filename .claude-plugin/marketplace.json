@@ -1,0 +1,20 @@
+{
+  "name": "agentmind-marketplace",
+  "owner": {
+    "name": "AgentMind Team"
+  },
+  "metadata": {
+    "description": "AgentMind - Agent Self-Learning Memory System",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "agentmind",
+      "source": "./",
+      "description": "Agent 自学习记忆系统 — 让 AI Agent 越用越懂你",
+      "version": "0.1.0",
+      "keywords": ["learning", "memory", "agent", "instinct"],
+      "category": "productivity"
+    }
+  ]
+}

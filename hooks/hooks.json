@@ -1,0 +1,111 @@
+{
+  "description": "AgentMind - Agent 自学习记忆系统观察与学习钩子",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/inject-context.sh",
+            "timeout": 5,
+            "statusMessage": "Loading learning context..."
+          }
+        ]
+      }
+    ],
+
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/observe-intent.sh",
+            "timeout": 3,
+            "async": true
+          }
+        ]
+      }
+    ],
+
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/observe-execution.sh --phase pre",
+            "timeout": 2,
+            "async": true
+          }
+        ]
+      }
+    ],
+
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/observe-execution.sh --phase post",
+            "timeout": 3,
+            "async": true
+          }
+        ]
+      }
+    ],
+
+    "PostToolUseFailure": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/observe-evaluation.sh --type error",
+            "timeout": 3,
+            "async": true
+          }
+        ]
+      }
+    ],
+
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/analyze-session.sh",
+            "timeout": 30,
+            "async": true
+          }
+        ]
+      }
+    ],
+
+    "PreCompact": [
+      {
+        "matcher": "auto|manual",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/pre-compact-save.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/analyze-session.sh --final",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
