@@ -23,7 +23,7 @@ Observe → Understand → Memorize → Apply → Validate → Evolve
 
 ```bash
 # Run in Claude Code
-/plugin marketplace add agentmind/agentmind-plugin
+/plugin marketplace add Youhai020616/Agentmind
 /plugin install agentmind@agentmind-marketplace
 ```
 

@@ -23,7 +23,7 @@ AgentMind 是一个 Claude Code Plugin，通过观察用户与 AI Agent 的交�
 
 ```bash
 # 在 Claude Code 中执行
-/plugin marketplace add agentmind/agentmind-plugin
+/plugin marketplace add Youhai020616/Agentmind
 /plugin install agentmind@agentmind-marketplace
 ```
 
@@ -31,8 +31,8 @@ AgentMind 是一个 Claude Code Plugin，通过观察用户与 AI Agent 的交�
 
 ```bash
 # 克隆项目
-git clone https://github.com/agentmind/agentmind-plugin.git
-cd agentmind-plugin
+git clone https://github.com/Youhai020616/Agentmind.git
+cd Agentmind
 
 # 安装依赖
 npm install

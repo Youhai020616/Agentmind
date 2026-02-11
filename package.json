@@ -1,6 +1,6 @@
 {
   "name": "agentmind-plugin",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "description": "AgentMind - Agent Self-Learning Memory System for Claude Code",
   "type": "module",
   "scripts": {
@@ -29,6 +29,6 @@
   "author": "AgentMind Team",
   "repository": {
     "type": "git",
-    "url": "https://github.com/agentmind/agentmind-plugin"
+    "url": "https://github.com/Youhai020616/Agentmind"
   }
 }

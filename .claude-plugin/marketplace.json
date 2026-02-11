@@ -1,20 +1,25 @@
 {
   "name": "agentmind-marketplace",
   "owner": {
-    "name": "AgentMind Team"
+    "name": "Youhai"
   },
   "metadata": {
-    "description": "AgentMind - Agent Self-Learning Memory System",
-    "version": "0.1.0"
+    "description": "AgentMind — Self-Learning Memory System for AI Agents",
+    "version": "0.5.0"
   },
   "plugins": [
     {
       "name": "agentmind",
       "source": "./",
-      "description": "Agent 自学习记忆系统 — 让 AI Agent 越用越懂你",
-      "version": "0.1.0",
-      "keywords": ["learning", "memory", "agent", "instinct"],
-      "category": "productivity"
+      "description": "Self-learning memory system that observes interactions, learns preferences, and makes AI Agents understand you better over time",
+      "version": "0.5.0",
+      "author": {
+        "name": "Youhai"
+      },
+      "license": "MIT",
+      "keywords": ["learning", "memory", "agent", "instinct", "evolution", "self-learning"],
+      "category": "productivity",
+      "tags": ["memory", "learning", "preferences", "workflow"]
     }
   ]
 }

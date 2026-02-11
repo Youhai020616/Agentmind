@@ -1,15 +1,14 @@
 {
   "name": "agentmind",
-  "version": "0.1.0",
-  "description": "Agent 自学习记忆系统 — 让 AI Agent 越用越懂你",
+  "version": "0.5.0",
+  "description": "Agent Self-Learning Memory System — Make AI Agents understand you better over time",
   "author": {
-    "name": "AgentMind Team",
-    "url": "https://github.com/agentmind"
+    "name": "Youhai"
   },
-  "homepage": "https://agentmind.dev",
-  "repository": "https://github.com/agentmind/agentmind-plugin",
+  "homepage": "https://github.com/Youhai020616/Agentmind",
+  "repository": "https://github.com/Youhai020616/Agentmind",
   "license": "MIT",
-  "keywords": ["learning", "memory", "agent", "instinct", "evolution"],
+  "keywords": ["learning", "memory", "agent", "instinct", "evolution", "self-learning"],
   "commands": "./commands/",
   "agents": "./agents/",
   "skills": "./skills/",
