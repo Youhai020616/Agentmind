@@ -1,115 +1,117 @@
-# AgentMind — Agent 自学习记忆系统
+# AgentMind — Self-Learning Memory System for AI Agents
 
-> **让 AI Agent 拥有记忆、学会成长、越用越懂你。**
+> **Give your AI Agent memory, let it grow, and make it understand you better over time.**
 
-AgentMind 是一个 Claude Code Plugin，通过观察用户与 AI Agent 的交互行为，自动学习编码偏好、工作流模式和最佳实践，并在后续会话中智能应用。
+[中文文档](./README.zh-CN.md)
 
-## 核心理念
+AgentMind is a Claude Code Plugin that observes user-agent interactions, automatically learns coding preferences, workflow patterns, and best practices, then intelligently applies them in future sessions.
+
+## Core Philosophy
 
 ```
-观察 → 理解 → 记忆 → 应用 → 验证 → 进化
-  O       U       M       A       V       E
+Observe → Understand → Memorize → Apply → Validate → Evolve
+   O          U           M         A         V         E
 ```
 
-## 安装
+## Installation
 
-### 方式一：Marketplace（推荐）
+### Option 1: Marketplace (Recommended)
 
 ```bash
-# 在 Claude Code 中执行
+# Run in Claude Code
 /plugin marketplace add agentmind/agentmind-plugin
 /plugin install agentmind@agentmind-marketplace
 ```
 
-### 方式二：本地开发
+### Option 2: Local Development
 
 ```bash
-# 克隆项目
-git clone https://github.com/agentmind/agentmind-plugin.git
-cd agentmind-plugin
+# Clone the project
+git clone https://github.com/Youhai020616/Agentmind.git
+cd Agentmind
 
-# 安装依赖
+# Install dependencies
 npm install
 
-# 以开发模式加载
+# Load in development mode
 claude --plugin-dir .
 ```
 
-## 功能概览
+## Features
 
-### 自动学习（零配置）
+### Automatic Learning (Zero Configuration)
 
-安装后 AgentMind 自动在后台运行：
+AgentMind runs automatically in the background after installation:
 
-- **意图观察** — 检测用户纠正和偏好表达
-- **执行观察** — 记录工具调用模式（不存储代码内容）
-- **评估观察** — 追踪错误模式和解决方案
-- **上下文注入** — 每次会话自动加载已学习的偏好
+- **Intent Observation** — Detects user corrections and preference expressions
+- **Execution Observation** — Records tool call patterns (no code content stored)
+- **Evaluation Observation** — Tracks error patterns and resolutions
+- **Context Injection** — Automatically loads learned preferences at each session start
 
-### 命令
+### Commands
 
-| 命令 | 说明 |
-|------|------|
-| `/agentmind:status` | 查看学习状态总览 |
-| `/agentmind:instincts` | 浏览和管理已学习的本能 |
-| `/agentmind:reflect` | 审核待确认的学习成果 |
-| `/agentmind:evolve` | 分析并执行本能进化 |
-| `/agentmind:dashboard` | 可视化学习数据 |
+| Command | Description |
+|---------|-------------|
+| `/agentmind:status` | View learning status overview |
+| `/agentmind:instincts` | Browse and manage learned instincts |
+| `/agentmind:reflect` | Review pending learning outcomes |
+| `/agentmind:evolve` | Analyze and execute instinct evolution |
+| `/agentmind:dashboard` | Visualize learning data |
 
-### 置信度系统
+### Confidence System
 
-AgentMind 使用三维复合置信度评分：
-
-```
-复合置信度 = 频率分 × 0.35 + 效果分 × 0.40 + 人工分 × 0.25
-```
-
-| 置信度 | 级别 | 行为 |
-|--------|------|------|
-| ≥ 0.8 | Core | 自动注入到 Agent 上下文 |
-| 0.6-0.8 | Strong | 上下文相关时自动建议 |
-| 0.4-0.6 | Moderate | 仅在被询问时提供 |
-| 0.2-0.4 | Tentative | 静默观察，不应用 |
-| < 0.2 | Deprecated | 标记删除 |
-
-### 四级进化
+AgentMind uses a three-dimensional composite confidence score:
 
 ```
-Level 0: 原子本能 (Instinct)    — 单一触发 → 单一动作
-Level 1: 行为模式 (Pattern)     — 多步骤有序序列
-Level 2: 策略 (Strategy)        — 可迁移的决策原则
-Level 3: 专家系统 (Expert)      — 完整领域能力集
+Composite Confidence = Frequency × 0.35 + Effectiveness × 0.40 + Human × 0.25
 ```
 
-## 项目结构
+| Confidence | Level | Behavior |
+|------------|-------|----------|
+| ≥ 0.8 | Core | Auto-injected into agent context |
+| 0.6–0.8 | Strong | Auto-suggested when contextually relevant |
+| 0.4–0.6 | Moderate | Provided only when asked |
+| 0.2–0.4 | Tentative | Silent observation, not applied |
+| < 0.2 | Deprecated | Marked for deletion |
+
+### Four-Level Evolution
+
+```
+Level 0: Instinct    — Single trigger → Single action
+Level 1: Pattern     — Multi-step ordered sequence
+Level 2: Strategy    — Transferable decision principles
+Level 3: Expert      — Complete domain capability set
+```
+
+## Project Structure
 
 ```
 agentmind/
 ├── .claude-plugin/
-│   ├── plugin.json              # 插件清单
-│   └── marketplace.json         # Marketplace 定义
-├── skills/                      # 自动激活的 Skills
-│   ├── agentmind-context/       # 学习上下文注入
-│   └── agentmind-guide/         # 行为指导
-├── commands/                    # 用户命令
+│   ├── plugin.json              # Plugin manifest
+│   └── marketplace.json         # Marketplace definition
+├── skills/                      # Auto-activated Skills
+│   ├── agentmind-context/       # Learning context injection
+│   └── agentmind-guide/         # Behavior guidance
+├── commands/                    # User commands
 │   ├── status.md
 │   ├── reflect.md
 │   ├── evolve.md
 │   ├── instincts.md
 │   └── dashboard.md
-├── agents/                      # 专用 Agents
+├── agents/                      # Dedicated Agents
 │   ├── learning-analyst.md
 │   └── evolution-engine.md
 ├── hooks/
-│   └── hooks.json               # 事件钩子注册
-├── scripts/                     # Hook 脚本
+│   └── hooks.json               # Event hook registration
+├── scripts/                     # Hook scripts
 │   ├── observe-intent.sh
 │   ├── observe-execution.sh
 │   ├── observe-evaluation.sh
 │   ├── inject-context.sh
 │   ├── analyze-session.sh
 │   ├── pre-compact-save.sh
-│   └── lib/                     # 核心 TypeScript 库
+│   └── lib/                     # Core TypeScript library
 │       ├── types.ts
 │       ├── storage.ts
 │       ├── detector.ts
@@ -117,8 +119,8 @@ agentmind/
 │       ├── instinct-manager.ts
 │       ├── context-generator.ts
 │       └── run.sh
-├── data/                        # 运行时数据 (.gitignore)
-├── docs/                        # 设计文档
+├── data/                        # Runtime data (.gitignore)
+├── docs/                        # Design documents
 │   ├── 00-README.md
 │   ├── 01-system-architecture.md
 │   ├── 02-observation-layer.md
@@ -132,130 +134,130 @@ agentmind/
 │   └── 10-claude-code-plugin-guide.md
 ├── package.json
 ├── tsconfig.json
-└── README.md                    # 本文件
+└── README.md
 ```
 
-## 开发
+## Development
 
-### 前置要求
+### Prerequisites
 
 - Node.js 20+
-- Claude Code (最新版)
-- jq (shell 脚本依赖)
+- Claude Code (latest)
+- jq (shell script dependency)
 
-### 本地开发
+### Local Development
 
 ```bash
-# 安装依赖
+# Install dependencies
 npm install
 
-# 给脚本添加执行权限
+# Grant execute permissions to scripts
 chmod +x scripts/*.sh
 
-# 以开发模式启动 Claude Code
+# Start Claude Code in development mode
 claude --plugin-dir .
 
-# 调试模式（查看 Hook 输出）
+# Debug mode (view Hook output)
 claude --plugin-dir . --debug
 ```
 
-### 运行测试
+### Run Tests
 
 ```bash
 npm test
 ```
 
-### 构建
+### Build
 
 ```bash
 npm run build
 ```
 
-### 代码检查
+### Lint
 
 ```bash
 npm run lint
 ```
 
-## 架构
+## Architecture
 
-### 数据流
+### Data Flow
 
 ```
-用户与 Claude Code 交互
+User interacts with Claude Code
         │
         ▼
 ┌─────────────────────────────────┐
-│  四层观察 (Hooks, async)         │
-│  意图 · 执行 · 评估              │
-│  → JSONL 记录                    │
+│  Observation Layer (Hooks, async)│
+│  Intent · Execution · Evaluation │
+│  → JSONL records                 │
 └──────────────┬──────────────────┘
                │
                ▼
 ┌─────────────────────────────────┐
-│  分析引擎 (Session End)          │
-│  模式检测 · 候选生成              │
-│  → 更新 instincts.json           │
+│  Analysis Engine (Session End)   │
+│  Pattern detection · Candidate   │
+│  generation → instincts.json     │
 └──────────────┬──────────────────┘
                │
                ▼
 ┌─────────────────────────────────┐
-│  上下文注入 (Session Start)      │
-│  置信度过滤 · 格式化              │
-│  → 注入 Agent System Prompt      │
+│  Context Injection (Session Start)│
+│  Confidence filtering · Formatting│
+│  → Inject into Agent System Prompt│
 └─────────────────────────────────┘
 ```
 
-### Hook 映射
+### Hook Mapping
 
-| 事件 | 脚本 | 模式 | 用途 |
-|------|------|------|------|
-| SessionStart | inject-context.sh | 同步 | 注入学习上下文 |
-| UserPromptSubmit | observe-intent.sh | 异步 | 意图层观察 |
-| PreToolUse | observe-execution.sh | 异步 | 执行层观察（pre） |
-| PostToolUse | observe-execution.sh | 异步 | 执行层观察（post） |
-| PostToolUseFailure | observe-evaluation.sh | 异步 | 错误模式收集 |
-| Stop | analyze-session.sh | 异步 | 会话分析 |
-| PreCompact | pre-compact-save.sh | 同步 | 保存关键数据 |
-| SessionEnd | analyze-session.sh | 同步 | 最终持久化 |
+| Event | Script | Mode | Purpose |
+|-------|--------|------|---------|
+| SessionStart | inject-context.sh | Sync | Inject learning context |
+| UserPromptSubmit | observe-intent.sh | Async | Intent layer observation |
+| PreToolUse | observe-execution.sh | Async | Execution observation (pre) |
+| PostToolUse | observe-execution.sh | Async | Execution observation (post) |
+| PostToolUseFailure | observe-evaluation.sh | Async | Error pattern collection |
+| Stop | analyze-session.sh | Async | Session analysis |
+| PreCompact | pre-compact-save.sh | Sync | Save critical data |
+| SessionEnd | analyze-session.sh | Sync | Final persistence |
 
-## 隐私
+## Privacy
 
-AgentMind 只存储**行为模式**，不存储代码内容：
+AgentMind only stores **behavioral patterns**, never code content:
 
-- 工具调用序列（如 `Grep → Read → Edit`）
-- 文件扩展名（`.ts`, `.tsx`）而非文件路径
-- 错误类型（`TypeError`）而非错误详情
-- 用户纠正模式而非对话原文
+- Tool call sequences (e.g., `Grep → Read → Edit`)
+- File extensions (`.ts`, `.tsx`) instead of file paths
+- Error types (`TypeError`) instead of error details
+- User correction patterns instead of conversation transcripts
 
-所有数据默认存储在本地 `data/` 目录。
+All data is stored locally in the `data/` directory by default.
 
-## 设计文档
+## Design Documents
 
-完整设计文档位于 `docs/` 目录：
+Full design documentation is available in the `docs/` directory:
 
-| 文档 | 内容 |
-|------|------|
-| [00-README](docs/00-README.md) | 项目概述与文档索引 |
-| [01-system-architecture](docs/01-system-architecture.md) | 六层系统架构设计 |
-| [02-observation-layer](docs/02-observation-layer.md) | 四层观察系统 |
-| [03-analysis-engine](docs/03-analysis-engine.md) | 分析引擎与因果推理 |
-| [04-confidence-system](docs/04-confidence-system.md) | 三维复合置信度系统 |
-| [05-evolution-system](docs/05-evolution-system.md) | 四级进化机制 |
-| [06-api-sdk-design](docs/06-api-sdk-design.md) | API/SDK 接口设计 |
-| [07-commercialization](docs/07-commercialization.md) | 商业化方案与定价 |
-| [08-implementation-roadmap](docs/08-implementation-roadmap.md) | 分阶段实施路线图 |
-| [09-market-analysis](docs/09-market-analysis.md) | 深度市场分析 |
-| [10-claude-code-plugin-guide](docs/10-claude-code-plugin-guide.md) | Claude Code Plugin 开发规范 |
+| Document | Content |
+|----------|---------|
+| [00-README](docs/00-README.md) | Project overview and document index |
+| [01-system-architecture](docs/01-system-architecture.md) | Six-layer system architecture |
+| [02-observation-layer](docs/02-observation-layer.md) | Four-layer observation system |
+| [03-analysis-engine](docs/03-analysis-engine.md) | Analysis engine and causal reasoning |
+| [04-confidence-system](docs/04-confidence-system.md) | Three-dimensional confidence system |
+| [05-evolution-system](docs/05-evolution-system.md) | Four-level evolution mechanism |
+| [06-api-sdk-design](docs/06-api-sdk-design.md) | API/SDK interface design |
+| [07-commercialization](docs/07-commercialization.md) | Commercialization plan and pricing |
+| [08-implementation-roadmap](docs/08-implementation-roadmap.md) | Phased implementation roadmap |
+| [09-market-analysis](docs/09-market-analysis.md) | In-depth market analysis |
+| [10-claude-code-plugin-guide](docs/10-claude-code-plugin-guide.md) | Claude Code Plugin development guide |
 
-## 路线图
+## Roadmap
 
-- [x] Phase 0: Plugin 骨架与核心文件
-- [ ] Phase 0.5: 脚本调试与本地测试
-- [ ] Phase 1: 分析引擎增强 + 置信度系统
-- [ ] Phase 2: 进化系统 + Dashboard
-- [ ] Phase 3: Marketplace 发布
-- [ ] Phase 4: SDK 提炼 + Cloud 版本
+- [x] Phase 0: Plugin skeleton and core files
+- [ ] Phase 0.5: Script debugging and local testing
+- [ ] Phase 1: Analysis engine enhancement + Confidence system
+- [ ] Phase 2: Evolution system + Dashboard
+- [ ] Phase 3: Marketplace release
+- [ ] Phase 4: SDK extraction + Cloud version
 
 ## License
 
