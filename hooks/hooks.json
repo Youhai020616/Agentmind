@@ -62,7 +62,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/observe-evaluation.sh --type error",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/observe-evaluation.sh",
             "timeout": 3,
             "async": true
           }

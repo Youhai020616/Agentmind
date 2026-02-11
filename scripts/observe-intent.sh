@@ -14,6 +14,11 @@ set -euo pipefail
 # Read hook input from stdin
 INPUT=$(cat)
 
+# Validate JSON input
+if [ -z "$INPUT" ] || ! echo "$INPUT" | jq empty 2>/dev/null; then
+  exit 0
+fi
+
 # Extract fields
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"')
 PROMPT=$(echo "$INPUT" | jq -r '.prompt // ""')

@@ -267,4 +267,57 @@ describe("generateCandidates", () => {
     // frequency capped at 0.6 for sequences
     expect(result[0].confidence.frequency).toBeLessThanOrEqual(0.6);
   });
+
+  it("generates candidates from corrections", () => {
+    const corrections = [
+      { correction_type: "explicit_rejection", count: 3, sessions: ["s1", "s2"] },
+      { correction_type: "redirection", count: 2, sessions: ["s1"] },
+    ];
+
+    const result = generateCandidates([], corrections, []);
+    expect(result).toHaveLength(2);
+    expect(result[0].domain).toBe("preference");
+    expect(result[0].source).toBe("correction_detection");
+    expect(result[0].action).toContain("3 time(s)");
+    expect(result[0].action).toContain("2 session(s)");
+  });
+
+  it("generates candidates from all three sources combined", () => {
+    const sequences = [
+      { sequence: ["Grep", "Read", "Edit"], count: 5, contexts: ["s1"] },
+    ];
+    const corrections = [
+      { correction_type: "redirection", count: 4, sessions: ["s1"] },
+    ];
+    const errors = [
+      { tool_name: "Bash", error_type: "timeout", count: 3, sessions: ["s1"] },
+    ];
+
+    const result = generateCandidates(sequences, corrections, errors);
+    expect(result).toHaveLength(3);
+
+    const domains = result.map((r) => r.domain);
+    expect(domains).toContain("workflow");
+    expect(domains).toContain("preference");
+    expect(domains).toContain("error-handling");
+  });
+
+  it("sets correction candidates as tentative", () => {
+    const corrections = [
+      { correction_type: "retry_request", count: 2, sessions: ["s1"] },
+    ];
+
+    const result = generateCandidates([], corrections, []);
+    expect(result[0].status).toBe("tentative");
+  });
+
+  it("caps correction confidence appropriately", () => {
+    const corrections = [
+      { correction_type: "explicit_rejection", count: 100, sessions: ["s1"] },
+    ];
+
+    const result = generateCandidates([], corrections, []);
+    // frequency capped at 0.5 for corrections
+    expect(result[0].confidence.frequency).toBeLessThanOrEqual(0.5);
+  });
 });

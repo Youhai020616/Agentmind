@@ -198,6 +198,21 @@ export function generateCandidates(
     });
   });
 
+  // From corrections
+  corrections.forEach((corr) => {
+    candidates.push({
+      trigger: `When user provides ${corr.correction_type.replace(/_/g, " ")} feedback`,
+      action: `Adjust approach — user has corrected this ${corr.count} time(s) across ${corr.sessions.length} session(s)`,
+      domain: "preference",
+      status: "tentative",
+      confidence: createInitialConfidence(Math.min(corr.count / 6, 0.5)),
+      evidence_count: corr.count,
+      source: "correction_detection" as InstinctSource,
+      application_count: 0,
+      success_rate: 0,
+    });
+  });
+
   // From error patterns
   errors.forEach((err) => {
     candidates.push({

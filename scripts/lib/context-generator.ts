@@ -36,7 +36,7 @@ function generateContext(): void {
 
   if (instincts.length === 0) {
     // No learned context yet
-    process.exit(0);
+    return;
   }
 
   const strong = instincts.filter((i) => i.confidence.composite >= 0.8);
@@ -96,7 +96,7 @@ function generateGuide(): void {
       status: "active",
       minConfidence: 0.6,
     });
-    if (topInstincts.length === 0) process.exit(0);
+    if (topInstincts.length === 0) return;
 
     let output = "### Established Patterns:\n";
     topInstincts.slice(0, 5).forEach((i) => {

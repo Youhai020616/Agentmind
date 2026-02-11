@@ -12,12 +12,27 @@
 
 set -euo pipefail
 
-# Parse phase argument
-PHASE="${2:-post}"
-shift 2 2>/dev/null || true
+# Parse --phase argument properly
+PHASE="post"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --phase)
+      PHASE="${2:-post}"
+      shift 2
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
 
 # Read hook input from stdin
 INPUT=$(cat)
+
+# Validate JSON input
+if ! echo "$INPUT" | jq empty 2>/dev/null; then
+  exit 0
+fi
 
 # Extract common fields
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"')
@@ -33,27 +48,29 @@ case "$TOOL_NAME" in
     # Extract only the command name, not arguments with sensitive data
     CMD_NAME=$(echo "$CMD" | awk '{print $1}' | xargs basename 2>/dev/null || echo "$CMD" | awk '{print $1}')
     HAS_PIPE=$(echo "$CMD" | grep -c '|' || true)
-    TOOL_ABSTRACT=$(jq -n --arg cmd "$CMD_NAME" --argjson pipe "$HAS_PIPE" \
-      '{command_name: $cmd, has_pipe: ($pipe > 0), command_length: ($cmd | length)}')
+    CMD_LEN=${#CMD}
+    TOOL_ABSTRACT=$(jq -cn --arg cmd "${CMD_NAME:-}" --argjson pipe "${HAS_PIPE:-0}" --argjson len "${CMD_LEN:-0}" \
+      '{command_name: $cmd, has_pipe: ($pipe > 0), command_length: $len}')
     ;;
   Read)
     FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""')
     EXT=$(echo "$FILE_PATH" | sed 's/.*\.//' | tr '[:upper:]' '[:lower:]')
-    TOOL_ABSTRACT=$(jq -n --arg ext "$EXT" '{file_extension: $ext}')
+    TOOL_ABSTRACT=$(jq -cn --arg ext "${EXT:-}" '{file_extension: $ext}')
     ;;
   Write|Edit)
     FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""')
     EXT=$(echo "$FILE_PATH" | sed 's/.*\.//' | tr '[:upper:]' '[:lower:]')
-    TOOL_ABSTRACT=$(jq -n --arg ext "$EXT" --arg tool "$TOOL_NAME" \
+    TOOL_ABSTRACT=$(jq -cn --arg ext "${EXT:-}" --arg tool "$TOOL_NAME" \
       '{file_extension: $ext, operation: $tool}')
     ;;
   Grep)
     PATTERN=$(echo "$INPUT" | jq -r '.tool_input.pattern // ""')
-    TOOL_ABSTRACT=$(jq -n --argjson plen "${#PATTERN}" '{pattern_length: $plen}')
+    PLEN=${#PATTERN}
+    TOOL_ABSTRACT=$(jq -cn --argjson plen "${PLEN:-0}" '{pattern_length: $plen}')
     ;;
   Glob)
     PATTERN=$(echo "$INPUT" | jq -r '.tool_input.pattern // ""')
-    TOOL_ABSTRACT=$(jq -n --arg pat "$PATTERN" '{glob_pattern: $pat}')
+    TOOL_ABSTRACT=$(jq -cn --arg pat "${PATTERN:-}" '{glob_pattern: $pat}')
     ;;
   WebSearch)
     TOOL_ABSTRACT='{"type": "web_search"}'
@@ -63,7 +80,7 @@ case "$TOOL_NAME" in
     ;;
   Task)
     AGENT_TYPE=$(echo "$INPUT" | jq -r '.tool_input.subagent_type // "unknown"')
-    TOOL_ABSTRACT=$(jq -n --arg at "$AGENT_TYPE" '{subagent_type: $at}')
+    TOOL_ABSTRACT=$(jq -cn --arg at "$AGENT_TYPE" '{subagent_type: $at}')
     ;;
   *)
     # MCP tools or unknown — just record the name

@@ -20,6 +20,12 @@ fi
 
 # Read hook input from stdin
 INPUT=$(cat)
+
+# Validate JSON input
+if ! echo "$INPUT" | jq empty 2>/dev/null; then
+  exit 0
+fi
+
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"')
 
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$0")")}"
@@ -38,8 +44,9 @@ if [ ! -f "$OBS_FILE" ]; then
   exit 0
 fi
 
-# Count observations for this session
-SESSION_OBS=$(grep -c "\"session_id\":\"${SESSION_ID}\"" "$OBS_FILE" 2>/dev/null || echo "0")
+# Count observations for this session using jq for robust JSON matching
+SESSION_OBS=$(jq -r --arg sid "$SESSION_ID" 'select(.session_id == $sid)' "$OBS_FILE" 2>/dev/null | grep -c '^{' 2>/dev/null || true)
+SESSION_OBS="${SESSION_OBS:-0}"
 
 # Need minimum observations for meaningful analysis
 if [ "$SESSION_OBS" -lt 5 ]; then
@@ -56,19 +63,25 @@ if [ "$SESSION_OBS" -lt 5 ]; then
   exit 0
 fi
 
-# --- Run pattern analysis ---
-node --no-warnings -e "
-const fs = require('fs');
-const readline = require('readline');
+# --- Run pattern analysis via environment variables (no shell interpolation in JS) ---
+export AGENTMIND_OBS_FILE="$OBS_FILE"
+export AGENTMIND_SESSION_ID="$SESSION_ID"
+export AGENTMIND_INSTINCTS_FILE="$INSTINCTS_FILE"
+export AGENTMIND_DATA_DIR="$DATA_DIR"
+export AGENTMIND_IS_FINAL="$IS_FINAL"
+
+node --no-warnings -e '
+const fs = require("fs");
 
 async function analyze() {
-  const obsFile = '${OBS_FILE}';
-  const sessionId = '${SESSION_ID}';
-  const instinctsFile = '${INSTINCTS_FILE}';
-  const isFinal = ${IS_FINAL};
+  const obsFile = process.env.AGENTMIND_OBS_FILE;
+  const sessionId = process.env.AGENTMIND_SESSION_ID;
+  const instinctsFile = process.env.AGENTMIND_INSTINCTS_FILE;
+  const dataDir = process.env.AGENTMIND_DATA_DIR;
+  const isFinal = process.env.AGENTMIND_IS_FINAL === "true";
 
   // Read observations for this session
-  const lines = fs.readFileSync(obsFile, 'utf8').trim().split('\n');
+  const lines = fs.readFileSync(obsFile, "utf8").trim().split("\n");
   const observations = lines
     .map(l => { try { return JSON.parse(l); } catch { return null; } })
     .filter(o => o && o.session_id === sessionId);
@@ -79,32 +92,34 @@ async function analyze() {
 
   // 1. Tool sequence detection (N-gram)
   const toolEvents = observations
-    .filter(o => o.layer === 'execution' && o.data.phase === 'pre')
+    .filter(o => o.layer === "execution" && o.data && o.data.phase === "pre")
     .map(o => o.data.tool_name);
 
   const bigrams = {};
   const trigrams = {};
   for (let i = 0; i < toolEvents.length - 1; i++) {
-    const bi = toolEvents[i] + ' → ' + toolEvents[i + 1];
+    const bi = toolEvents[i] + " -> " + toolEvents[i + 1];
     bigrams[bi] = (bigrams[bi] || 0) + 1;
     if (i < toolEvents.length - 2) {
-      const tri = toolEvents[i] + ' → ' + toolEvents[i + 1] + ' → ' + toolEvents[i + 2];
+      const tri = toolEvents[i] + " -> " + toolEvents[i + 1] + " -> " + toolEvents[i + 2];
       trigrams[tri] = (trigrams[tri] || 0) + 1;
     }
   }
 
   // 2. Correction detection
   const corrections = observations
-    .filter(o => o.layer === 'intent' && o.data.has_correction);
+    .filter(o => o.layer === "intent" && o.data && o.data.has_correction);
 
   // 3. Error patterns
   const errors = observations
-    .filter(o => o.layer === 'evaluation' && o.event === 'tool_failure');
+    .filter(o => o.layer === "evaluation" && o.event === "tool_failure");
 
   const errorTypes = {};
   errors.forEach(e => {
-    const key = e.data.tool_name + ':' + e.data.error_type;
-    errorTypes[key] = (errorTypes[key] || 0) + 1;
+    if (e.data && e.data.tool_name && e.data.error_type) {
+      const key = e.data.tool_name + ":" + e.data.error_type;
+      errorTypes[key] = (errorTypes[key] || 0) + 1;
+    }
   });
 
   // --- Generate Instinct Candidates ---
@@ -113,13 +128,13 @@ async function analyze() {
   // From frequent sequences
   Object.entries(trigrams).forEach(([seq, count]) => {
     if (count >= 2) {
-      const tools = seq.split(' → ');
+      const tools = seq.split(" -> ");
       candidates.push({
-        trigger: 'When performing a ' + tools[0].toLowerCase() + ' operation',
-        action: 'Follow the sequence: ' + seq,
-        domain: 'workflow',
+        trigger: "When performing a " + tools[0].toLowerCase() + " operation",
+        action: "Follow the sequence: " + seq,
+        domain: "workflow",
         evidence_count: count,
-        source: 'sequence_detection',
+        source: "sequence_detection",
         initial_confidence: Math.min(count / 10, 0.5)
       });
     }
@@ -128,22 +143,28 @@ async function analyze() {
   // From corrections
   if (corrections.length > 0) {
     candidates.push({
-      trigger: 'When responding to user requests',
-      action: 'User has corrected the agent ' + corrections.length + ' time(s) in this session — review correction patterns',
-      domain: 'user-preference',
+      trigger: "When responding to user requests",
+      action: "User has corrected the agent " + corrections.length + " time(s) in this session — review correction patterns",
+      domain: "user-preference",
       evidence_count: corrections.length,
-      source: 'correction_detection',
+      source: "correction_detection",
       initial_confidence: 0.3
     });
   }
 
-  // --- Update instincts file ---
-  let instincts = { instincts: [], metadata: {} };
+  // --- Update instincts file (atomic write) ---
+  let instincts = { instincts: [], patterns: [], strategies: [], experts: [], metadata: {} };
   try {
     if (fs.existsSync(instinctsFile)) {
-      instincts = JSON.parse(fs.readFileSync(instinctsFile, 'utf8'));
+      const raw = fs.readFileSync(instinctsFile, "utf8");
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.instincts)) {
+        instincts = parsed;
+      }
     }
-  } catch {}
+  } catch {
+    // Corrupted file — start fresh
+  }
 
   // Add new candidates (avoid duplicates)
   candidates.forEach(c => {
@@ -167,11 +188,11 @@ async function analyze() {
     } else {
       // Create new instinct
       instincts.instincts.push({
-        id: 'inst_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        id: "inst_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         trigger: c.trigger,
         action: c.action,
         domain: c.domain,
-        status: 'tentative',
+        status: "tentative",
         confidence: {
           frequency: c.initial_confidence,
           effectiveness: 0.5,
@@ -196,8 +217,10 @@ async function analyze() {
     total_observations: (instincts.metadata.total_observations || 0) + observations.length
   };
 
-  // Save
-  fs.writeFileSync(instinctsFile, JSON.stringify(instincts, null, 2));
+  // Atomic write: write to temp file, then rename
+  const tmpFile = instinctsFile + ".tmp." + process.pid;
+  fs.writeFileSync(tmpFile, JSON.stringify(instincts, null, 2));
+  fs.renameSync(tmpFile, instinctsFile);
 
   // Log session summary
   const summary = {
@@ -209,10 +232,10 @@ async function analyze() {
     errors: errors.length,
     is_final: isFinal
   };
-  fs.appendFileSync('${DATA_DIR}/sessions.jsonl', JSON.stringify(summary) + '\n');
+  fs.appendFileSync(dataDir + "/sessions.jsonl", JSON.stringify(summary) + "\n");
 }
 
 analyze().catch(() => process.exit(0));
-" 2>/dev/null
+' 2>/dev/null
 
 exit 0

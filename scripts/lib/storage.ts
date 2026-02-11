@@ -10,6 +10,8 @@ import {
   existsSync,
   mkdirSync,
   appendFileSync,
+  renameSync,
+  copyFileSync,
 } from "fs";
 import { join } from "path";
 import type {
@@ -53,15 +55,34 @@ export class LocalStorage {
     }
     try {
       const raw = readFileSync(this.instinctsPath, "utf8");
-      return JSON.parse(raw) as InstinctsStore;
+      const parsed = JSON.parse(raw);
+      // Validate basic structure
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        !Array.isArray(parsed.instincts)
+      ) {
+        throw new Error("Invalid store structure");
+      }
+      return parsed as InstinctsStore;
     } catch {
+      // Backup corrupted file before overwriting
+      try {
+        const backupPath = this.instinctsPath + ".corrupt." + Date.now();
+        copyFileSync(this.instinctsPath, backupPath);
+      } catch {
+        // Backup failed — proceed anyway
+      }
       return this.createEmptyStore();
     }
   }
 
   saveStore(store: InstinctsStore): void {
     store.metadata.version = STORE_VERSION;
-    writeFileSync(this.instinctsPath, JSON.stringify(store, null, 2));
+    // Atomic write: write to temp file, then rename
+    const tmpPath = this.instinctsPath + ".tmp." + process.pid;
+    writeFileSync(tmpPath, JSON.stringify(store, null, 2));
+    renameSync(tmpPath, this.instinctsPath);
   }
 
   private createEmptyStore(): InstinctsStore {

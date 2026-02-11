@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { LocalStorage } from "../storage.js";
-import { mkdirSync, rmSync, existsSync } from "fs";
+import { mkdirSync, rmSync, existsSync, writeFileSync, readFileSync, readdirSync } from "fs";
 import { join } from "path";
 import type { Instinct, CompositeConfidence, Observation } from "../types.js";
 
@@ -283,5 +283,71 @@ describe("getStats", () => {
   it("returns 0 avg confidence when no active instincts", () => {
     const stats = storage.getStats();
     expect(stats.avgConfidence).toBe(0);
+  });
+});
+
+describe("Corrupt JSON recovery", () => {
+  it("recovers from corrupted instincts.json", () => {
+    // Write invalid JSON to instincts.json
+    const instinctsPath = join(TEST_ROOT, "data", "instincts.json");
+    writeFileSync(instinctsPath, "{ this is not valid JSON !!!}");
+
+    const store = storage.loadStore();
+    // Should return empty store instead of crashing
+    expect(store.instincts).toEqual([]);
+    expect(store.metadata.version).toBe("0.1.0");
+  });
+
+  it("creates backup of corrupted file", () => {
+    const instinctsPath = join(TEST_ROOT, "data", "instincts.json");
+    writeFileSync(instinctsPath, "corrupted data");
+
+    storage.loadStore();
+
+    // Check that a .corrupt backup was created
+    const dataDir = join(TEST_ROOT, "data");
+    const files = readdirSync(dataDir);
+    const backupFiles = files.filter((f) => f.includes(".corrupt."));
+    expect(backupFiles.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("recovers from structurally invalid JSON (missing instincts array)", () => {
+    const instinctsPath = join(TEST_ROOT, "data", "instincts.json");
+    writeFileSync(instinctsPath, JSON.stringify({ foo: "bar" }));
+
+    const store = storage.loadStore();
+    expect(store.instincts).toEqual([]);
+  });
+});
+
+describe("Atomic write", () => {
+  it("persists data correctly via atomic write", () => {
+    const store = storage.loadStore();
+    const inst = makeInstinct({ trigger: "Atomic test" });
+    store.instincts.push(inst);
+    storage.saveStore(store);
+
+    // No temp files should remain
+    const dataDir = join(TEST_ROOT, "data");
+    const files = readdirSync(dataDir);
+    const tmpFiles = files.filter((f) => f.includes(".tmp."));
+    expect(tmpFiles).toHaveLength(0);
+
+    // Data should be persisted correctly
+    const loaded = storage.loadStore();
+    expect(loaded.instincts).toHaveLength(1);
+    expect(loaded.instincts[0].trigger).toBe("Atomic test");
+  });
+
+  it("produces valid JSON after atomic write", () => {
+    const store = storage.loadStore();
+    store.instincts.push(makeInstinct());
+    storage.saveStore(store);
+
+    const instinctsPath = join(TEST_ROOT, "data", "instincts.json");
+    const raw = readFileSync(instinctsPath, "utf8");
+    // Should not throw
+    const parsed = JSON.parse(raw);
+    expect(parsed).toHaveProperty("instincts");
   });
 });

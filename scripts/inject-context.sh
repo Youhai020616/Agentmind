@@ -23,63 +23,25 @@ if [ "$INSTINCT_COUNT" = "0" ]; then
   exit 0
 fi
 
-# Generate context using Node.js for proper JSON processing
-node --no-warnings -e "
-const fs = require('fs');
+# Generate context using the TypeScript context-generator module
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+LIB_DIR="${SCRIPT_DIR}/lib"
 
-try {
-  const data = JSON.parse(fs.readFileSync('${INSTINCTS_FILE}', 'utf8'));
-  const instincts = data.instincts || [];
+export CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT"
 
-  // Filter active instincts above threshold
-  const active = instincts
-    .filter(i => i.status === 'active' && i.confidence && i.confidence.composite >= 0.4)
-    .sort((a, b) => b.confidence.composite - a.confidence.composite);
-
-  if (active.length === 0) process.exit(0);
-
-  // Group by confidence tier
-  const strong = active.filter(i => i.confidence.composite >= 0.8);
-  const moderate = active.filter(i => i.confidence.composite >= 0.6 && i.confidence.composite < 0.8);
-  const tentative = active.filter(i => i.confidence.composite >= 0.4 && i.confidence.composite < 0.6);
-
-  let output = '';
-  output += '## AgentMind Learning Context\n\n';
-
-  if (strong.length > 0) {
-    output += '### Strong Preferences (apply these):\n';
-    strong.slice(0, 10).forEach(i => {
-      output += '- ' + i.trigger + ': ' + i.action + '\n';
-    });
-    output += '\n';
-  }
-
-  if (moderate.length > 0) {
-    output += '### Patterns (prefer these when applicable):\n';
-    moderate.slice(0, 8).forEach(i => {
-      output += '- ' + i.trigger + ': ' + i.action + '\n';
-    });
-    output += '\n';
-  }
-
-  if (tentative.length > 0) {
-    output += '### Suggestions (consider these):\n';
-    tentative.slice(0, 5).forEach(i => {
-      output += '- Consider: ' + i.action + '\n';
-    });
-    output += '\n';
-  }
-
-  // Token budget: keep output under ~300 tokens
-  if (output.length > 2000) {
-    output = output.substring(0, 2000) + '\n...(truncated for context budget)\n';
-  }
-
-  process.stdout.write(output);
-} catch (e) {
-  // Silently fail — don't break the session
-  process.exit(0);
-}
-" 2>/dev/null
+# Use run.sh to invoke context-generator
+if [ -x "${LIB_DIR}/run.sh" ]; then
+  "${LIB_DIR}/run.sh" context-generator generate 2>/dev/null || exit 0
+else
+  # Fallback: try direct tsx/node invocation
+  if command -v npx &> /dev/null; then
+    npx --yes tsx "${LIB_DIR}/context-generator.ts" generate 2>/dev/null || exit 0
+  elif command -v node &> /dev/null; then
+    DIST_FILE="${LIB_DIR}/dist/context-generator.js"
+    if [ -f "$DIST_FILE" ]; then
+      node "$DIST_FILE" generate 2>/dev/null || exit 0
+    fi
+  fi
+fi
 
 exit 0

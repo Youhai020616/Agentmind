@@ -14,9 +14,10 @@
 //   dashboard-data          — Output dashboard JSON data
 // =============================================================================
 
+import { readFileSync, writeFileSync } from "fs";
 import { LocalStorage } from "./storage.js";
 import { formatConfidence } from "./confidence.js";
-import type { Instinct } from "./types.js";
+import type { Instinct, InstinctsStore } from "./types.js";
 
 // Resolve plugin root
 const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || process.cwd();
@@ -47,6 +48,15 @@ switch (command) {
     break;
   case "dashboard-data":
     outputDashboardData();
+    break;
+  case "search":
+    searchInstincts(args);
+    break;
+  case "export":
+    exportInstincts(args[0]);
+    break;
+  case "import":
+    importInstincts(args[0]);
     break;
   default:
     showStatus();
@@ -300,4 +310,98 @@ function outputDashboardData(): void {
   };
 
   process.stdout.write(JSON.stringify(data, null, 2));
+}
+
+function searchInstincts(args: string[]): void {
+  const keyword = args.join(" ").toLowerCase().trim();
+  if (!keyword) {
+    process.stdout.write("Usage: search <keyword>\n");
+    return;
+  }
+
+  const all = storage.getInstincts();
+  const matches = all.filter(
+    (i) =>
+      i.trigger.toLowerCase().includes(keyword) ||
+      i.action.toLowerCase().includes(keyword) ||
+      i.domain.toLowerCase().includes(keyword) ||
+      (i.tags && i.tags.some((t) => t.toLowerCase().includes(keyword))),
+  );
+
+  if (matches.length === 0) {
+    process.stdout.write(`No instincts found matching "${keyword}".\n`);
+    return;
+  }
+
+  let output = `# Search Results: "${keyword}" (${matches.length} matches)\n\n`;
+  matches.forEach((inst, i) => {
+    output += `${i + 1}. **${inst.trigger}**: ${inst.action}\n`;
+    output += `   ${formatConfidence(inst.confidence)} | ${inst.domain} | ${inst.status}\n`;
+  });
+
+  process.stdout.write(output);
+}
+
+function exportInstincts(filePath?: string): void {
+  const store = storage.loadStore();
+  const exportData = {
+    version: store.metadata.version,
+    exported_at: new Date().toISOString(),
+    instincts: store.instincts,
+    patterns: store.patterns,
+    strategies: store.strategies,
+  };
+
+  if (filePath) {
+    writeFileSync(filePath, JSON.stringify(exportData, null, 2));
+    process.stdout.write(`Exported ${store.instincts.length} instincts to ${filePath}\n`);
+  } else {
+    process.stdout.write(JSON.stringify(exportData, null, 2));
+  }
+}
+
+function importInstincts(filePath?: string): void {
+  if (!filePath) {
+    process.stdout.write("Usage: import <file-path>\n");
+    return;
+  }
+
+  let raw: string;
+  try {
+    raw = readFileSync(filePath, "utf8");
+  } catch {
+    process.stderr.write(`Error: Could not read file ${filePath}\n`);
+    return;
+  }
+
+  let importData: { instincts?: Instinct[]; patterns?: InstinctsStore["patterns"]; strategies?: InstinctsStore["strategies"] };
+  try {
+    importData = JSON.parse(raw);
+  } catch {
+    process.stderr.write("Error: Invalid JSON in import file.\n");
+    return;
+  }
+
+  if (!importData.instincts || !Array.isArray(importData.instincts)) {
+    process.stderr.write("Error: Import file must contain an 'instincts' array.\n");
+    return;
+  }
+
+  let imported = 0;
+  let skipped = 0;
+
+  importData.instincts.forEach((inst) => {
+    const existing = storage.getInstinctById(inst.id);
+    if (existing) {
+      skipped++;
+    } else {
+      storage.upsertInstinct({
+        ...inst,
+        source: "imported" as Instinct["source"],
+      });
+      imported++;
+    }
+  });
+
+  process.stdout.write(`Imported ${imported} instincts (${skipped} skipped as duplicates).\n`);
 }
