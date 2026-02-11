@@ -137,30 +137,9 @@ npm run lint
 
 ### Data Flow
 
-```
-User interacts with Claude Code
-        │
-        ▼
-┌─────────────────────────────────┐
-│  Observation Layer (Hooks, async)│
-│  Intent · Execution · Evaluation │
-│  → JSONL records                 │
-└──────────────┬──────────────────┘
-               │
-               ▼
-┌─────────────────────────────────┐
-│  Analysis Engine (Session End)   │
-│  Pattern detection · Candidate   │
-│  generation → instincts.json     │
-└──────────────┬──────────────────┘
-               │
-               ▼
-┌─────────────────────────────────┐
-│  Context Injection (Session Start)│
-│  Confidence filtering · Formatting│
-│  → Inject into Agent System Prompt│
-└─────────────────────────────────┘
-```
+<p align="center">
+  <img src="./agentmind-dataflow-minimal.png" alt="AgentMind Data Flow" width="800">
+</p>
 
 ### Hook Mapping
 
