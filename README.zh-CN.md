@@ -185,6 +185,10 @@ npm run lint
 
 ## 架构
 
+<p align="center">
+  <img src="./agentmind-architecture-minimal.png" alt="AgentMind 架构" width="800">
+</p>
+
 ### 数据流
 
 ```

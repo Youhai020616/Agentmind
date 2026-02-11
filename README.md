@@ -185,6 +185,10 @@ npm run lint
 
 ## Architecture
 
+<p align="center">
+  <img src="./agentmind-architecture-minimal.png" alt="AgentMind Architecture" width="800">
+</p>
+
 ### Data Flow
 
 ```
