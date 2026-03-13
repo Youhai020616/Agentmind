@@ -27,7 +27,12 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LIB_DIR="${SCRIPT_DIR}/lib"
 
+# Read hook input from stdin (SessionStart provides cwd, model, etc.)
+INPUT=$(cat 2>/dev/null || true)
+CWD=$(echo "$INPUT" | jq -r '.cwd // ""' 2>/dev/null || echo "")
+
 export CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT"
+export AGENTMIND_CWD="$CWD"
 
 # Record which instincts are being injected for effectiveness tracking (Phase 1.1)
 ACTIVE_INSTINCTS_FILE="${PLUGIN_ROOT}/data/active-instincts.json"
@@ -40,17 +45,21 @@ jq -cn --argjson ids "$INJECTED_IDS" --arg ts "$TIMESTAMP" \
   '{injected_ids: $ids, injected_at: $ts, outcome_count: 0}' > "$ACTIVE_TMP" 2>/dev/null
 mv "$ACTIVE_TMP" "$ACTIVE_INSTINCTS_FILE" 2>/dev/null || true
 
-# Use run.sh to invoke context-generator
+# Use run.sh to invoke context-generator (pass --cwd for task-aware injection)
+CWD_ARG=""
+if [ -n "$CWD" ]; then
+  CWD_ARG="--cwd $CWD"
+fi
+
 if [ -x "${LIB_DIR}/run.sh" ]; then
-  "${LIB_DIR}/run.sh" context-generator generate 2>/dev/null || exit 0
+  "${LIB_DIR}/run.sh" context-generator generate $CWD_ARG 2>/dev/null || exit 0
 else
-  # Fallback: try direct tsx/node invocation
   if command -v npx &> /dev/null; then
-    npx --yes tsx "${LIB_DIR}/context-generator.ts" generate 2>/dev/null || exit 0
+    npx --yes tsx "${LIB_DIR}/context-generator.ts" generate $CWD_ARG 2>/dev/null || exit 0
   elif command -v node &> /dev/null; then
     DIST_FILE="${LIB_DIR}/dist/context-generator.js"
     if [ -f "$DIST_FILE" ]; then
-      node "$DIST_FILE" generate 2>/dev/null || exit 0
+      node "$DIST_FILE" generate $CWD_ARG 2>/dev/null || exit 0
     fi
   fi
 fi

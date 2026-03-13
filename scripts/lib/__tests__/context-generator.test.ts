@@ -110,11 +110,11 @@ describe("context-generator generate", () => {
     ]);
 
     const output = runGenerator("generate");
-    expect(output).toContain("Strong Preferences");
+    expect(output).toContain("Apply these");
     expect(output).toContain("Strong trigger");
-    expect(output).toContain("Patterns");
+    expect(output).toContain("Prefer these");
     expect(output).toContain("Moderate trigger");
-    expect(output).toContain("Suggestions");
+    expect(output).toContain("Consider");
     expect(output).toContain("Tentative action");
   });
 
