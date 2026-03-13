@@ -46,20 +46,21 @@ jq -cn --argjson ids "$INJECTED_IDS" --arg ts "$TIMESTAMP" \
 mv "$ACTIVE_TMP" "$ACTIVE_INSTINCTS_FILE" 2>/dev/null || true
 
 # Use run.sh to invoke context-generator (pass --cwd for task-aware injection)
-CWD_ARG=""
+# Build args array to handle paths with spaces correctly
+CTX_ARGS=(generate)
 if [ -n "$CWD" ]; then
-  CWD_ARG="--cwd $CWD"
+  CTX_ARGS+=(--cwd "$CWD")
 fi
 
 if [ -x "${LIB_DIR}/run.sh" ]; then
-  "${LIB_DIR}/run.sh" context-generator generate $CWD_ARG 2>/dev/null || exit 0
+  "${LIB_DIR}/run.sh" context-generator "${CTX_ARGS[@]}" 2>/dev/null || exit 0
 else
   if command -v npx &> /dev/null; then
-    npx --yes tsx "${LIB_DIR}/context-generator.ts" generate $CWD_ARG 2>/dev/null || exit 0
+    npx --yes tsx "${LIB_DIR}/context-generator.ts" "${CTX_ARGS[@]}" 2>/dev/null || exit 0
   elif command -v node &> /dev/null; then
     DIST_FILE="${LIB_DIR}/dist/context-generator.js"
     if [ -f "$DIST_FILE" ]; then
-      node "$DIST_FILE" generate $CWD_ARG 2>/dev/null || exit 0
+      node "$DIST_FILE" "${CTX_ARGS[@]}" 2>/dev/null || exit 0
     fi
   fi
 fi

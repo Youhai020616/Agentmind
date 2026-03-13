@@ -15,6 +15,8 @@
 // =============================================================================
 
 import { readFileSync, writeFileSync } from "fs";
+import { execSync } from "child_process";
+import { join } from "path";
 import { LocalStorage } from "./storage.js";
 import { formatConfidence, updateHumanScore, updateComposite } from "./confidence.js";
 import type { Instinct, InstinctsStore } from "./types.js";
@@ -152,9 +154,7 @@ function humanFeedback(idSuffix: string | undefined, action: "approve" | "reject
  * Delegates to evolution.ts.
  */
 function runEvolve(): void {
-  const { execSync } = require("child_process");
-  const { join } = require("path");
-  const evolutionPath = join(__dirname, "evolution.ts");
+  const evolutionPath = join(import.meta.dirname, "evolution.ts");
   try {
     const output = execSync(`npx --yes tsx "${evolutionPath}" run`, {
       env: { ...process.env, CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT },

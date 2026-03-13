@@ -145,24 +145,37 @@ if [ "$PHASE" = "post" ]; then
       fi
 
       if [ "$DELTA" != "0" ]; then
-        # Update effectiveness for all active instincts (atomic)
-        INSTINCTS_TMP="${INSTINCTS_FILE}.eff.tmp.$$"
-        jq --argjson activeIds "$(jq '.injected_ids' "$ACTIVE_FILE")" \
-           --argjson delta "$DELTA" \
-           '
-           .instincts |= map(
-             if (.id as $id | $activeIds | index($id)) then
-               .confidence.effectiveness = ((.confidence.effectiveness + $delta) | if . > 1 then 1 elif . < 0 then 0 else (. * 100 | round / 100) end) |
-               .confidence.composite = (
-                 .confidence.frequency * 0.35 +
-                 .confidence.effectiveness * 0.40 +
-                 .confidence.human * 0.25
-               | . * 100 | round / 100)
-             else .
-             end
-           )
-           ' "$INSTINCTS_FILE" > "$INSTINCTS_TMP" 2>/dev/null && \
-        mv "$INSTINCTS_TMP" "$INSTINCTS_FILE" 2>/dev/null || rm -f "$INSTINCTS_TMP"
+        # Update effectiveness for all active instincts (atomic + advisory lock)
+        LOCK_FILE="${INSTINCTS_FILE}.lock"
+        # Acquire lock: mkdir is atomic on all POSIX systems (works on macOS + Linux)
+        LOCK_ACQUIRED=false
+        for _retry in 1 2 3 4 5; do
+          if mkdir "$LOCK_FILE" 2>/dev/null; then LOCK_ACQUIRED=true; break; fi
+          sleep 0.2
+        done
+        if [ "$LOCK_ACQUIRED" = "true" ]; then
+        (
+          INSTINCTS_TMP="${INSTINCTS_FILE}.eff.tmp.$$"
+          jq --argjson activeIds "$(jq '.injected_ids' "$ACTIVE_FILE")" \
+             --argjson delta "$DELTA" \
+             '
+             .instincts |= map(
+               if (.id as $id | $activeIds | index($id)) then
+                 .confidence.effectiveness = ((.confidence.effectiveness + $delta) | if . > 1 then 1 elif . < 0 then 0 else (. * 100 | round / 100) end) |
+                 .confidence.composite = (
+                   (.confidence.frequency * 0.35 +
+                    .confidence.effectiveness * 0.40 +
+                    .confidence.human * 0.25) *
+                   (if [.confidence.frequency, .confidence.effectiveness, .confidence.human] | min < 0.2 then 0.9 else 1.0 end)
+                 | . * 100 | round / 100)
+               else .
+               end
+             )
+             ' "$INSTINCTS_FILE" > "$INSTINCTS_TMP" 2>/dev/null && \
+          mv "$INSTINCTS_TMP" "$INSTINCTS_FILE" 2>/dev/null || rm -f "$INSTINCTS_TMP"
+        )
+        rmdir "$LOCK_FILE" 2>/dev/null || true
+        fi
 
         # Increment outcome count
         ACTIVE_TMP="${ACTIVE_FILE}.tmp.$$"

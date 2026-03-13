@@ -90,21 +90,22 @@ function instinctSimilarity(a: Instinct, b: Instinct): number {
  * Classify a cluster of instincts as sequential, parallel, or conditional.
  */
 function classifyCluster(instincts: Instinct[]): ClusterType {
-  // If triggers mention sequence words → sequential
-  const sequenceWords = /follow|then|after|before|first|next|step|workflow|→/i;
-  const hasSequence = instincts.some(
-    i => sequenceWords.test(i.trigger) || sequenceWords.test(i.action)
-  );
-  if (hasSequence) return "sequential";
-
-  // If triggers mention conditions → conditional
-  const conditionWords = /when|if|unless|depending|case|while/i;
-  const conditionCount = instincts.filter(
-    i => conditionWords.test(i.trigger)
+  // If actions mention sequence words → sequential (check actions, not triggers)
+  const sequenceWords = /follow|then|after|before|first|next|step|workflow|→|→/i;
+  const sequenceCount = instincts.filter(
+    i => sequenceWords.test(i.action)
   ).length;
-  if (conditionCount >= instincts.length * 0.7) return "conditional";
+  if (sequenceCount >= instincts.length * 0.5) return "sequential";
 
-  // Default: parallel rules
+  // If triggers have diverse conditions (not just generic "When") → conditional
+  // Exclude generic "When ..." prefix which almost every instinct has
+  const specificConditionWords = /\bif\b|unless|depending|case\b|while\b|only when/i;
+  const conditionCount = instincts.filter(
+    i => specificConditionWords.test(i.trigger) || specificConditionWords.test(i.action)
+  ).length;
+  if (conditionCount >= instincts.length * 0.5) return "conditional";
+
+  // Default: parallel rules (same domain, independent guidelines)
   return "parallel";
 }
 
