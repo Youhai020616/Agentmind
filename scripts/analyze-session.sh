@@ -253,4 +253,16 @@ async function analyze() {
 analyze().catch(() => process.exit(0));
 ' 2>/dev/null
 
+# --- Run evolution cycle on final session analysis ---
+if [ "$IS_FINAL" = "true" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  LIB_DIR="${SCRIPT_DIR}/lib"
+
+  if [ -x "${LIB_DIR}/run.sh" ]; then
+    "${LIB_DIR}/run.sh" evolution run 2>/dev/null || true
+  elif command -v npx &> /dev/null; then
+    npx --yes tsx "${LIB_DIR}/evolution.ts" run 2>/dev/null || true
+  fi
+fi
+
 exit 0

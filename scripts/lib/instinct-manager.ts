@@ -49,6 +49,9 @@ switch (command) {
   case "demote":
     humanFeedback(args[0], "demote");
     break;
+  case "evolve":
+    runEvolve();
+    break;
   case "evolve-candidates":
     showEvolveCandidates();
     break;
@@ -142,6 +145,28 @@ function humanFeedback(idSuffix: string | undefined, action: "approve" | "reject
   output += `   Status: ${oldStatus} → ${instinct.status}\n`;
   output += `   ${formatConfidence(instinct.confidence)}\n`;
   process.stdout.write(output);
+}
+
+/**
+ * Trigger a full evolution cycle (cluster + abstract + degrade).
+ * Delegates to evolution.ts.
+ */
+function runEvolve(): void {
+  const { execSync } = require("child_process");
+  const { join } = require("path");
+  const evolutionPath = join(__dirname, "evolution.ts");
+  try {
+    const output = execSync(`npx --yes tsx "${evolutionPath}" run`, {
+      env: { ...process.env, CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT },
+      encoding: "utf8",
+      timeout: 30000,
+    });
+    process.stdout.write(output);
+  } catch (err: unknown) {
+    const error = err as { stdout?: string; stderr?: string };
+    if (error.stdout) process.stdout.write(error.stdout);
+    process.stderr.write("Evolution cycle encountered an error.\n");
+  }
 }
 
 function showStatus(domain?: string): void {
