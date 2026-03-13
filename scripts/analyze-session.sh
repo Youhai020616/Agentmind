@@ -36,35 +36,30 @@ INSTINCTS_FILE="${DATA_DIR}/instincts.json"
 # Ensure data directory exists
 mkdir -p "$DATA_DIR"
 
-# Check if there are observations to analyze
-TODAY=$(date +%Y-%m-%d)
-OBS_FILE="${OBS_DIR}/${TODAY}.jsonl"
-
-if [ ! -f "$OBS_FILE" ]; then
-  exit 0
-fi
-
-# Count observations for this session using jq for robust JSON matching
-SESSION_OBS=$(jq -r --arg sid "$SESSION_ID" 'select(.session_id == $sid)' "$OBS_FILE" 2>/dev/null | grep -c '^{' 2>/dev/null || true)
-SESSION_OBS="${SESSION_OBS:-0}"
-
-# Need minimum observations for meaningful analysis
-if [ "$SESSION_OBS" -lt 5 ]; then
-  # Too few observations — skip analysis
-  if [ "$IS_FINAL" = "true" ]; then
-    # On final, at least save a session summary
-    jq -cn \
-      --arg sid "$SESSION_ID" \
-      --arg ts "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-      --argjson count "$SESSION_OBS" \
-      '{session_id: $sid, timestamp: $ts, observation_count: $count, analysis: "skipped_insufficient_data"}' \
-      >> "${DATA_DIR}/sessions.jsonl"
+# Load the most recent 7 days of observation files for cross-day analysis
+RECENT_OBS_FILES=()
+for OFFSET in 0 1 2 3 4 5 6; do
+  if DAY=$(date -v -"${OFFSET}"d +%Y-%m-%d 2>/dev/null); then
+    :
+  else
+    DAY=$(date -d "${OFFSET} days ago" +%Y-%m-%d 2>/dev/null || true)
   fi
+
+  if [ -n "${DAY:-}" ] && [ -f "${OBS_DIR}/${DAY}.jsonl" ]; then
+    RECENT_OBS_FILES+=("${OBS_DIR}/${DAY}.jsonl")
+  fi
+done
+
+if [ "${#RECENT_OBS_FILES[@]}" -eq 0 ]; then
   exit 0
 fi
+
+MERGED_OBS_FILE=$(mktemp "${DATA_DIR}/recent-observations.XXXXXX.jsonl")
+trap 'rm -f "$MERGED_OBS_FILE"' EXIT
+cat "${RECENT_OBS_FILES[@]}" > "$MERGED_OBS_FILE"
 
 # --- Run pattern analysis via environment variables (no shell interpolation in JS) ---
-export AGENTMIND_OBS_FILE="$OBS_FILE"
+export AGENTMIND_OBS_FILE="$MERGED_OBS_FILE"
 export AGENTMIND_SESSION_ID="$SESSION_ID"
 export AGENTMIND_INSTINCTS_FILE="$INSTINCTS_FILE"
 export AGENTMIND_DATA_DIR="$DATA_DIR"
@@ -80,18 +75,34 @@ async function analyze() {
   const dataDir = process.env.AGENTMIND_DATA_DIR;
   const isFinal = process.env.AGENTMIND_IS_FINAL === "true";
 
-  // Read observations for this session
-  const lines = fs.readFileSync(obsFile, "utf8").trim().split("\n");
-  const observations = lines
-    .map(l => { try { return JSON.parse(l); } catch { return null; } })
-    .filter(o => o && o.session_id === sessionId);
+  // Read observations from the last 7 days for cross-day analysis
+  const raw = fs.readFileSync(obsFile, "utf8").trim();
+  if (!raw) return;
 
-  if (observations.length < 5) return;
+  const allObservations = raw.split("\n")
+    .map(l => { try { return JSON.parse(l); } catch { return null; } })
+    .filter(Boolean);
+
+  const sessionObservations = allObservations.filter(o => o.session_id === sessionId);
+
+  if (sessionObservations.length < 5) {
+    if (isFinal) {
+      const summary = {
+        session_id: sessionId,
+        timestamp: new Date().toISOString(),
+        observation_count: sessionObservations.length,
+        analysis: "skipped_insufficient_data",
+        is_final: true
+      };
+      fs.appendFileSync(dataDir + "/sessions.jsonl", JSON.stringify(summary) + "\n");
+    }
+    return;
+  }
 
   // --- Pattern Detection ---
 
-  // 1. Tool sequence detection (N-gram)
-  const toolEvents = observations
+  // 1. Tool sequence detection (N-gram) across recent observations
+  const toolEvents = allObservations
     .filter(o => o.layer === "execution" && o.data && o.data.phase === "pre")
     .map(o => o.data.tool_name);
 
@@ -107,11 +118,11 @@ async function analyze() {
   }
 
   // 2. Correction detection
-  const corrections = observations
+  const corrections = allObservations
     .filter(o => o.layer === "intent" && o.data && o.data.has_correction);
 
   // 3. Error patterns
-  const errors = observations
+  const errors = allObservations
     .filter(o => o.layer === "evaluation" && o.event === "tool_failure");
 
   const errorTypes = {};
@@ -144,7 +155,7 @@ async function analyze() {
   if (corrections.length > 0) {
     candidates.push({
       trigger: "When responding to user requests",
-      action: "User has corrected the agent " + corrections.length + " time(s) in this session — review correction patterns",
+      action: "User has corrected the agent " + corrections.length + " time(s) in the last 7 days — review correction patterns",
       domain: "user-preference",
       evidence_count: corrections.length,
       source: "correction_detection",
@@ -214,7 +225,7 @@ async function analyze() {
     ...instincts.metadata,
     last_analysis: new Date().toISOString(),
     total_sessions_analyzed: (instincts.metadata.total_sessions_analyzed || 0) + (isFinal ? 1 : 0),
-    total_observations: (instincts.metadata.total_observations || 0) + observations.length
+    total_observations: (instincts.metadata.total_observations || 0) + sessionObservations.length
   };
 
   // Atomic write: write to temp file, then rename
@@ -223,13 +234,17 @@ async function analyze() {
   fs.renameSync(tmpFile, instinctsFile);
 
   // Log session summary
+  const sessionCorrections = sessionObservations
+    .filter(o => o.layer === "intent" && o.data && o.data.has_correction);
+  const sessionErrors = sessionObservations
+    .filter(o => o.layer === "evaluation" && o.event === "tool_failure");
   const summary = {
     session_id: sessionId,
     timestamp: new Date().toISOString(),
-    observation_count: observations.length,
+    observation_count: sessionObservations.length,
     patterns_detected: candidates.length,
-    corrections: corrections.length,
-    errors: errors.length,
+    corrections: sessionCorrections.length,
+    errors: sessionErrors.length,
     is_final: isFinal
   };
   fs.appendFileSync(dataDir + "/sessions.jsonl", JSON.stringify(summary) + "\n");
