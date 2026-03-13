@@ -224,7 +224,7 @@ function showStatus(domain?: string): void {
 }
 
 function listInstincts(args: string[]): void {
-  const filters: { status?: string; domain?: string; minConfidence?: number } =
+  const filters: { status?: string; domain?: string; minConfidence?: number; agentId?: string } =
     {};
 
   // Parse args
@@ -236,10 +236,16 @@ function listInstincts(args: string[]): void {
     } else if (args[i] === "--min-confidence" && args[i + 1]) {
       const parsed = parseFloat(args[++i]);
       if (!isNaN(parsed)) filters.minConfidence = parsed;
+    } else if (args[i] === "--agent" && args[i + 1]) {
+      filters.agentId = args[++i];
     }
   }
 
   if (!filters.status) filters.status = "active";
+  // Default agent from env if not specified
+  if (!filters.agentId && process.env.AGENTMIND_AGENT_ID) {
+    filters.agentId = process.env.AGENTMIND_AGENT_ID;
+  }
 
   const instincts = storage.getInstincts(filters);
 
@@ -248,8 +254,14 @@ function listInstincts(args: string[]): void {
     return;
   }
 
-  let output = `| ID | Trigger | Action | Confidence | Domain | Status |\n`;
-  output += `|-----|---------|--------|------------|--------|--------|\n`;
+  // Check if any instincts have agent_id (multi-agent mode)
+  const hasAgents = instincts.some(i => i.agent_id);
+
+  let output = hasAgents
+    ? `| ID | Trigger | Action | Confidence | Domain | Agent | Status |\n` +
+      `|-----|---------|--------|------------|--------|-------|--------|\n`
+    : `| ID | Trigger | Action | Confidence | Domain | Status |\n` +
+      `|-----|---------|--------|------------|--------|--------|\n`;
 
   instincts.forEach((inst) => {
     const conf = `${(inst.confidence.composite * 100).toFixed(0)}%`;
@@ -259,7 +271,8 @@ function listInstincts(args: string[]): void {
         : inst.trigger;
     const action =
       inst.action.length > 40 ? inst.action.slice(0, 37) + "..." : inst.action;
-    output += `| ${inst.id.slice(-8)} | ${trigger} | ${action} | ${conf} | ${inst.domain} | ${inst.status} |\n`;
+    const agentCol = hasAgents ? ` ${inst.agent_id || "global"} |` : "";
+    output += `| ${inst.id.slice(-8)} | ${trigger} | ${action} | ${conf} | ${inst.domain} |${agentCol} ${inst.status} |\n`;
   });
 
   process.stdout.write(output);

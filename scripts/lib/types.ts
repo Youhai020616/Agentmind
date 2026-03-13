@@ -95,6 +95,7 @@ export interface Instinct {
   success_rate: number;
   tags?: string[];
   evolution_parent?: string; // ID of parent if evolved
+  agent_id?: string;         // Owner agent ID (undefined = global, shared by all)
 }
 
 // --- Evolution System ---
@@ -112,6 +113,7 @@ export interface Pattern {
   domain: string;
   confidence: CompositeConfidence;
   created_at: string;
+  agent_id?: string;        // Owner agent (undefined = global)
 }
 
 export interface Strategy {
@@ -124,6 +126,7 @@ export interface Strategy {
   domain: string;
   confidence: CompositeConfidence;
   created_at: string;
+  agent_id?: string;        // Owner agent (undefined = global)
 }
 
 export interface ExpertSystem {

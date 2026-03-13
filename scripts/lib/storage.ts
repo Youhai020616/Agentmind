@@ -108,6 +108,7 @@ export class LocalStorage {
     status?: string;
     domain?: string;
     minConfidence?: number;
+    agentId?: string | null;  // string = specific agent, null = global only, undefined = all
   }): Instinct[] {
     const store = this.loadStore();
     let instincts = store.instincts;
@@ -122,6 +123,16 @@ export class LocalStorage {
       instincts = instincts.filter(
         (i) => i.confidence.composite >= filters.minConfidence!,
       );
+    }
+    // Agent filtering: specific agent sees own + global; null = global only
+    if (filters?.agentId !== undefined) {
+      if (filters.agentId === null) {
+        instincts = instincts.filter((i) => !i.agent_id);
+      } else {
+        instincts = instincts.filter(
+          (i) => !i.agent_id || i.agent_id === filters.agentId,
+        );
+      }
     }
 
     return instincts.sort(

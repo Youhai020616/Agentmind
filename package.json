@@ -1,8 +1,20 @@
 {
-  "name": "agentmind-plugin",
-  "version": "0.5.0",
-  "description": "AgentMind - Agent Self-Learning Memory System for Claude Code",
+  "name": "agentmind",
+  "version": "1.0.0",
+  "description": "Agent Self-Learning Memory System — Make AI agents understand you better over time",
   "type": "module",
+  "exports": {
+    "./core": "./scripts/lib/index.ts",
+    "./storage": "./scripts/lib/storage.ts",
+    "./confidence": "./scripts/lib/confidence.ts",
+    "./detector": "./scripts/lib/detector.ts",
+    "./evolution": "./scripts/lib/evolution.ts",
+    "./preferences": "./scripts/lib/preference-detector.ts",
+    "./types": "./scripts/lib/types.ts"
+  },
+  "bin": {
+    "agentmind": "./scripts/lib/cli.ts"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -10,8 +22,13 @@
     "test:run": "vitest run",
     "lint": "eslint scripts/lib/",
     "typecheck": "tsc --noEmit",
-    "setup": "chmod +x scripts/*.sh && npm run build"
+    "setup": "chmod +x scripts/*.sh && npm run build",
+    "cli": "npx tsx scripts/lib/cli.ts"
   },
+  "keywords": [
+    "ai", "agent", "memory", "learning", "instinct", "evolution",
+    "claude", "openclaw", "self-learning", "preferences"
+  ],
   "dependencies": {},
   "devDependencies": {
     "typescript": "^5.4.0",
@@ -26,7 +43,7 @@
     "node": ">=20.0.0"
   },
   "license": "MIT",
-  "author": "AgentMind Team",
+  "author": "Youhai <youhai020616@gmail.com>",
   "repository": {
     "type": "git",
     "url": "https://github.com/Youhai020616/Agentmind"
