@@ -169,10 +169,11 @@ All data is stored locally in the `data/` directory by default.
 
 - [x] Phase 0: Plugin skeleton and core files
 - [x] Phase 0.5: Script debugging and local testing
-- [ ] Phase 1: Analysis engine enhancement + Confidence system
-- [ ] Phase 2: Evolution system + Dashboard
-- [ ] Phase 3: Marketplace release
-- [ ] Phase 4: SDK extraction + Cloud version
+- [x] Phase 1: Analysis engine enhancement + Confidence system
+- [x] Phase 2: Evolution Engine (L0→L1 clustering + L1→L2 abstraction + degradation)
+- [x] Phase 3: Smart Context (task-aware + dynamic budget + preference detection)
+- [x] Phase 4: Multi-platform + Multi-agent + npm package
+- [ ] Phase 5: Marketplace release + Cloud version
 
 ## License
 

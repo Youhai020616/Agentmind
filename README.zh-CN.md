@@ -169,10 +169,11 @@ AgentMind 只存储**行为模式**，不存储代码内容：
 
 - [x] Phase 0: Plugin 骨架与核心文件
 - [x] Phase 0.5: 脚本调试与本地测试
-- [ ] Phase 1: 分析引擎增强 + 置信度系统
-- [ ] Phase 2: 进化系统 + Dashboard
-- [ ] Phase 3: Marketplace 发布
-- [ ] Phase 4: SDK 提炼 + Cloud 版本
+- [x] Phase 1: 分析引擎增强 + 置信度系统
+- [x] Phase 2: 进化引擎（L0→L1 聚类 + L1→L2 抽象 + 退化机制）
+- [x] Phase 3: 智能上下文（任务感知 + 动态预算 + 偏好检测）
+- [x] Phase 4: 多平台 + 多 Agent + npm 包
+- [ ] Phase 5: Marketplace 发布 + Cloud 版本
 
 ## License
 
