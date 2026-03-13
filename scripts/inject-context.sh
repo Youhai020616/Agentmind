@@ -29,6 +29,17 @@ LIB_DIR="${SCRIPT_DIR}/lib"
 
 export CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT"
 
+# Record which instincts are being injected for effectiveness tracking (Phase 1.1)
+ACTIVE_INSTINCTS_FILE="${PLUGIN_ROOT}/data/active-instincts.json"
+INJECTED_IDS=$(jq -r '[.instincts[] | select(.status == "active" and .confidence.composite >= 0.4) | .id] | tojson' "$INSTINCTS_FILE" 2>/dev/null || echo '[]')
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# Atomic write: tmp + rename
+ACTIVE_TMP="${ACTIVE_INSTINCTS_FILE}.tmp.$$"
+jq -cn --argjson ids "$INJECTED_IDS" --arg ts "$TIMESTAMP" \
+  '{injected_ids: $ids, injected_at: $ts, outcome_count: 0}' > "$ACTIVE_TMP" 2>/dev/null
+mv "$ACTIVE_TMP" "$ACTIVE_INSTINCTS_FILE" 2>/dev/null || true
+
 # Use run.sh to invoke context-generator
 if [ -x "${LIB_DIR}/run.sh" ]; then
   "${LIB_DIR}/run.sh" context-generator generate 2>/dev/null || exit 0

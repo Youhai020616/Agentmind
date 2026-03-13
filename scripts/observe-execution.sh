@@ -126,4 +126,51 @@ OBSERVATION=$(jq -cn \
 
 echo "$OBSERVATION" >> "${DATA_DIR}/$(date +%Y-%m-%d).jsonl"
 
+# --- Phase 1.1: Effectiveness feedback for active instincts ---
+if [ "$PHASE" = "post" ]; then
+  ACTIVE_FILE="${PLUGIN_ROOT}/data/active-instincts.json"
+  INSTINCTS_FILE="${PLUGIN_ROOT}/data/instincts.json"
+
+  if [ -f "$ACTIVE_FILE" ] && [ -f "$INSTINCTS_FILE" ]; then
+    INJECTED_IDS=$(jq -r '.injected_ids // [] | length' "$ACTIVE_FILE" 2>/dev/null || echo "0")
+
+    if [ "$INJECTED_IDS" -gt 0 ]; then
+      # Determine delta: success → +0.03, failure → -0.05
+      if [ "$SUCCESS" = "true" ]; then
+        DELTA="0.03"
+      elif [ "$SUCCESS" = "false" ]; then
+        DELTA="-0.05"
+      else
+        DELTA="0"
+      fi
+
+      if [ "$DELTA" != "0" ]; then
+        # Update effectiveness for all active instincts (atomic)
+        INSTINCTS_TMP="${INSTINCTS_FILE}.eff.tmp.$$"
+        jq --argjson activeIds "$(jq '.injected_ids' "$ACTIVE_FILE")" \
+           --argjson delta "$DELTA" \
+           '
+           .instincts |= map(
+             if (.id as $id | $activeIds | index($id)) then
+               .confidence.effectiveness = ((.confidence.effectiveness + $delta) | if . > 1 then 1 elif . < 0 then 0 else (. * 100 | round / 100) end) |
+               .confidence.composite = (
+                 .confidence.frequency * 0.35 +
+                 .confidence.effectiveness * 0.40 +
+                 .confidence.human * 0.25
+               | . * 100 | round / 100)
+             else .
+             end
+           )
+           ' "$INSTINCTS_FILE" > "$INSTINCTS_TMP" 2>/dev/null && \
+        mv "$INSTINCTS_TMP" "$INSTINCTS_FILE" 2>/dev/null || rm -f "$INSTINCTS_TMP"
+
+        # Increment outcome count
+        ACTIVE_TMP="${ACTIVE_FILE}.tmp.$$"
+        jq '.outcome_count += 1' "$ACTIVE_FILE" > "$ACTIVE_TMP" 2>/dev/null && \
+        mv "$ACTIVE_TMP" "$ACTIVE_FILE" 2>/dev/null || rm -f "$ACTIVE_TMP"
+      fi
+    fi
+  fi
+fi
+
 exit 0

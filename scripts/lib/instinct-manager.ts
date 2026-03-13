@@ -16,7 +16,7 @@
 
 import { readFileSync, writeFileSync } from "fs";
 import { LocalStorage } from "./storage.js";
-import { formatConfidence } from "./confidence.js";
+import { formatConfidence, updateHumanScore, updateComposite } from "./confidence.js";
 import type { Instinct, InstinctsStore } from "./types.js";
 
 // Resolve plugin root
@@ -36,6 +36,18 @@ switch (command) {
     break;
   case "pending":
     showPending();
+    break;
+  case "approve":
+    humanFeedback(args[0], "approve");
+    break;
+  case "reject":
+    humanFeedback(args[0], "reject");
+    break;
+  case "promote":
+    humanFeedback(args[0], "promote");
+    break;
+  case "demote":
+    humanFeedback(args[0], "demote");
     break;
   case "evolve-candidates":
     showEvolveCandidates();
@@ -63,6 +75,74 @@ switch (command) {
 }
 
 // --- Command Implementations ---
+
+/**
+ * Human feedback: approve/reject/promote/demote an instinct.
+ * - approve: human score +0.3, status → active
+ * - reject: human score -0.3, status → deprecated if composite < 0.2
+ * - promote: human score → 1.0, status → active (strong endorsement)
+ * - demote: human score → 0.0, status → deprecated (strong rejection)
+ */
+function humanFeedback(idSuffix: string | undefined, action: "approve" | "reject" | "promote" | "demote"): void {
+  if (!idSuffix) {
+    process.stderr.write(`Usage: ${action} <instinct-id-or-suffix>\n`);
+    process.stderr.write(`Use 'list --status tentative' to see pending instincts.\n`);
+    return;
+  }
+
+  const store = storage.loadStore();
+  // Match by full ID or suffix
+  const instinct = store.instincts.find(
+    (i) => i.id === idSuffix || i.id.endsWith(idSuffix)
+  );
+
+  if (!instinct) {
+    process.stderr.write(`Error: No instinct found matching "${idSuffix}".\n`);
+    return;
+  }
+
+  const oldHuman = instinct.confidence.human;
+  const oldStatus = instinct.status;
+
+  switch (action) {
+    case "approve":
+      instinct.confidence.human = updateHumanScore(instinct.confidence.human, true, 0.3);
+      if (instinct.status === "tentative" || instinct.status === "deprecated") {
+        instinct.status = "active";
+      }
+      instinct.last_verified = new Date().toISOString();
+      break;
+    case "reject":
+      instinct.confidence.human = updateHumanScore(instinct.confidence.human, false, 0.3);
+      break;
+    case "promote":
+      instinct.confidence.human = 1.0;
+      instinct.status = "active";
+      instinct.last_verified = new Date().toISOString();
+      break;
+    case "demote":
+      instinct.confidence.human = 0.0;
+      instinct.status = "deprecated";
+      break;
+  }
+
+  // Recalculate composite
+  instinct.confidence = updateComposite(instinct.confidence);
+
+  // Auto-deprecate if composite too low after reject
+  if (action === "reject" && instinct.confidence.composite < 0.2) {
+    instinct.status = "deprecated";
+  }
+
+  storage.upsertInstinct(instinct);
+
+  let output = `✅ Instinct ${action}d: ${instinct.id.slice(-8)}\n`;
+  output += `   "${instinct.trigger}": ${instinct.action}\n`;
+  output += `   Human score: ${(oldHuman * 100).toFixed(0)}% → ${(instinct.confidence.human * 100).toFixed(0)}%\n`;
+  output += `   Status: ${oldStatus} → ${instinct.status}\n`;
+  output += `   ${formatConfidence(instinct.confidence)}\n`;
+  process.stdout.write(output);
+}
 
 function showStatus(domain?: string): void {
   const stats = storage.getStats();
